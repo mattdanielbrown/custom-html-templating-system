@@ -45,10 +45,15 @@ const outputHtml = await templateEngineApi["render-template-file"](
 	templateEngine,
 	"pages/index.page.html",
 	{
-		pageData: [
-			{ index: 0, file: "/", title: "Home" },
-			{ index: 1, file: "/contact", title: "Contact" }
-		]
+		page: {
+			title: "Home",
+			file: "/",
+			navigation: [
+				{ file: "/", title: "Home" },
+				{ file: "/contact", title: "Contact" }
+			],
+			cards: ["One", "Two", "Three"]
+		}
 	}
 );
 
