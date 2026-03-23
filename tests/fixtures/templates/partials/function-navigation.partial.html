@@ -1,0 +1,7 @@
+<nav>
+	<ul>
+		{% for navItem in page.navigation %}
+			{{ fn("navigation-menu-item.function.html", { item: navItem }) }}
+		{% end for %}
+	</ul>
+</nav>

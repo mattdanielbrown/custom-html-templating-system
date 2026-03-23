@@ -19,8 +19,12 @@
 `create-template-engine(options)` supports:
 - `templateRootDirectoryPath` (string)
 - `partialsDirectoryPath` (string, optional)
+- `functionsDirectoryPath` (string, optional; default: `<templateRoot>/functions`)
 - `strictMissingKeyErrors` (boolean, default: false)
 - `allowRawOutput` (boolean, default: true)
+- `enableTemplateParseCache` (boolean, default: false)
+- `enableTemplateFileCache` (boolean, default: false)
+- `maxFunctionTemplateDepth` (number, default: 25)
 
 ### 2.3 Canonical Return Behavior
 - `render-template` returns rendered HTML string.
@@ -93,6 +97,17 @@ Rules:
 - page blocks override matching layout blocks by name
 - unmatched layout blocks render their default layout content
 
+### 4.8 Function Templates
+- interpolation invocation: `{{ fn("name.function.html", { key: value }) }}`
+- directive invocation: `{% function "name.function.html" with { key: value } %}`
+
+Rules:
+- function templates resolve under functions root (`functionsDirectoryPath` or `<templateRoot>/functions`)
+- argument contract is a single object only
+- function invocation outputs rendered HTML string
+- nested function calls are supported
+- recursion and max-depth violations are rejected
+
 ## 5. Deterministic Rendering Rules
 
 ### 5.1 Evaluation Order
@@ -145,6 +160,17 @@ Set behavior:
 - circular include chains
 - strict-mode missing key
 - strict-mode invalid loop target
+- function template not found
+- function path outside functions root
+- invalid function argument object
+- function recursion/depth violations
+
+### 6.4 Function Error Codes
+- `TEMPLATE_RENDER_FUNCTION_NOT_FOUND`
+- `TEMPLATE_RENDER_FUNCTION_PATH_OUTSIDE_ROOT`
+- `TEMPLATE_RENDER_FUNCTION_INVALID_ARGUMENTS`
+- `TEMPLATE_RENDER_FUNCTION_RECURSION`
+- `TEMPLATE_RENDER_FUNCTION_EXECUTION_FAILED`
 
 ## 7. Security Rules
 - No `eval`, `Function` constructor, or template-sourced dynamic code execution.
@@ -161,8 +187,10 @@ Set behavior:
 - terminology must align with `./overview.md` and `./syntax-and-structure-conventions.md` (canonical).
 - syntax examples in docs must use v2 directive forms.
 
-## 10. Function Template Execution Kickoff (Planned)
+## 10. Function Template Execution (Implemented)
 - Naming convention: `*.function.html` under `./src/templates/functions/`.
-- Scaffolded runtime entrypoints exist in `./src/engine/function-template-runtime.js`.
-- Invocation contract (planned): resolve function-template path inside functions root, bind explicit arguments, render deterministically, and return string output.
-- Out of scope for current baseline: parser syntax for function invocation and full execution semantics in the core renderer.
+- Runtime entrypoints are defined in `./src/engine/function-template-runtime.js`.
+- Supported invocation forms:
+	- `{{ fn("name.function.html", { ... }) }}`
+	- `{% function "name.function.html" with { ... } %}`
+- Function execution uses isolated object context, deterministic rendering, recursion protection, and canonical function error codes.

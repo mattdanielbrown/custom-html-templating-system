@@ -14,17 +14,15 @@
 - phase 4 implemented: parse cache and file cache options, deterministic file cache invalidation tests
 - docs updated: README + specification + canonical conventions file aligned to v2
 
-## Function Template Execution Kickoff (Scaffold Only)
+## Function Template Execution (Implemented)
 
-- added `src/engine/function-template-runtime.js`
+- implemented `src/engine/function-template-runtime.js`
 	- `resolveFunctionTemplatePath(templateEngine, functionTemplatePath)`
-	- `invokeFunctionTemplate()` placeholder
-- added kickoff tests in `tests/unit/function-template-execution-kickoff.test.js`
-	- current scaffold behavior is verified
-	- next-cycle TODO tests capture expected function-template runtime behavior
+	- `invokeFunctionTemplate(templateEngine, functionTemplatePath, argumentObject, runtimeContext)`
+- converted kickoff tests in `tests/unit/function-template-execution-kickoff.test.js` to executable assertions
+- added integration coverage for page + layout + partial + function-template rendering
 
 ## Out of Scope in This Baseline
 
-- parsing and executing function-template invocation syntax in main renderer
-- argument binding semantics across function-template calls
-- macro/function template caching strategy
+- advanced macro-specific authoring features beyond function-template invocation
+- function template-specific performance benchmarking

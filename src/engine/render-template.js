@@ -1,5 +1,8 @@
 import { readFileSync, statSync } from "node:fs";
 import { dirname, resolve, sep } from "node:path";
+import { invokeFunctionTemplate } from "./function-template-runtime.js";
+
+const RAW_TEMPLATE_OUTPUT_SYMBOL = Symbol("raw-template-output");
 
 function createTemplateError({
 	errorName,
@@ -164,6 +167,24 @@ function toOutputString(value) {
 	return String(value);
 }
 
+function createRawTemplateOutputValue(value) {
+	return {
+		[RAW_TEMPLATE_OUTPUT_SYMBOL]: toOutputString(value)
+	};
+}
+
+function readRawTemplateOutputValue(value) {
+	if (!isObjectLike(value)) {
+		return null;
+	}
+
+	if (!Object.prototype.hasOwnProperty.call(value, RAW_TEMPLATE_OUTPUT_SYMBOL)) {
+		return null;
+	}
+
+	return value[RAW_TEMPLATE_OUTPUT_SYMBOL];
+}
+
 function escapeHtml(value) {
 	return value
 		.replaceAll("&", "&amp;")
@@ -297,6 +318,55 @@ function parseTopLevelFunctionCall(expression) {
 	};
 }
 
+function parseObjectLiteralExpression(expression) {
+	const trimmedExpression = expression.trim();
+	if (!trimmedExpression.startsWith("{") || !trimmedExpression.endsWith("}")) {
+		return null;
+	}
+
+	const bodyExpression = trimmedExpression.slice(1, -1).trim();
+	if (!bodyExpression) {
+		return [];
+	}
+
+	const objectEntries = [];
+	const entryExpressions = splitByTopLevelDelimiter(bodyExpression, ",");
+	for (const entryExpression of entryExpressions) {
+		const normalizedEntryExpression = entryExpression.trim();
+		if (!normalizedEntryExpression) {
+			continue;
+		}
+
+		const colonIndex = findOperatorIndex(normalizedEntryExpression, ":");
+		if (colonIndex <= 0) {
+			return null;
+		}
+
+		const rawKeyExpression = normalizedEntryExpression.slice(0, colonIndex).trim();
+		const valueExpression = normalizedEntryExpression.slice(colonIndex + 1).trim();
+		if (!rawKeyExpression || !valueExpression) {
+			return null;
+		}
+
+		let keyName = rawKeyExpression;
+		if (
+			(rawKeyExpression.startsWith('"') && rawKeyExpression.endsWith('"')) ||
+			(rawKeyExpression.startsWith("'") && rawKeyExpression.endsWith("'"))
+		) {
+			keyName = rawKeyExpression.slice(1, -1);
+		} else if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(rawKeyExpression)) {
+			return null;
+		}
+
+		objectEntries.push({
+			keyName,
+			valueExpression
+		});
+	}
+
+	return objectEntries;
+}
+
 function invokeRegisteredHelper(templateEngine, helperName, helperArguments, settings, node) {
 	const helperFunction = templateEngine.helpersByName.get(helperName);
 	if (typeof helperFunction !== "function") {
@@ -321,7 +391,7 @@ function invokeRegisteredHelper(templateEngine, helperName, helperArguments, set
 	}
 }
 
-function evaluateExpression(expression, scopeFrames, settings, node, templateEngine) {
+function evaluateExpression(expression, scopeFrames, settings, node, templateEngine, runtimeState) {
 	const trimmedExpression = expression.trim();
 
 	if (!trimmedExpression) {
@@ -330,7 +400,14 @@ function evaluateExpression(expression, scopeFrames, settings, node, templateEng
 
 	const pipeSegments = splitByTopLevelDelimiter(trimmedExpression, "|").map((segment) => segment.trim());
 	if (pipeSegments.length > 1) {
-		let currentValue = evaluateExpression(pipeSegments[0], scopeFrames, settings, node, templateEngine);
+		let currentValue = evaluateExpression(
+			pipeSegments[0],
+			scopeFrames,
+			settings,
+			node,
+			templateEngine,
+			runtimeState
+		);
 
 		for (let index = 1; index < pipeSegments.length; index += 1) {
 			const pipeSegment = pipeSegments[index];
@@ -348,7 +425,14 @@ function evaluateExpression(expression, scopeFrames, settings, node, templateEng
 				const helperArguments = [currentValue];
 				for (const argumentExpression of helperCall.argumentExpressions) {
 					helperArguments.push(
-						evaluateExpression(argumentExpression, scopeFrames, settings, node, templateEngine)
+						evaluateExpression(
+							argumentExpression,
+							scopeFrames,
+							settings,
+							node,
+							templateEngine,
+							runtimeState
+						)
 					);
 				}
 				currentValue = invokeRegisteredHelper(
@@ -387,11 +471,42 @@ function evaluateExpression(expression, scopeFrames, settings, node, templateEng
 		(trimmedExpression.startsWith("[") && trimmedExpression.endsWith("]"))
 	) {
 		const innerExpression = trimmedExpression.slice(1, -1).trim();
-		return evaluateExpression(innerExpression, scopeFrames, settings, node, templateEngine);
+		return evaluateExpression(
+			innerExpression,
+			scopeFrames,
+			settings,
+			node,
+			templateEngine,
+			runtimeState
+		);
 	}
 
 	if (trimmedExpression.startsWith("!")) {
-		return !evaluateExpression(trimmedExpression.slice(1), scopeFrames, settings, node, templateEngine);
+		return !evaluateExpression(
+			trimmedExpression.slice(1),
+			scopeFrames,
+			settings,
+			node,
+			templateEngine,
+			runtimeState
+		);
+	}
+
+	const objectLiteralEntries = parseObjectLiteralExpression(trimmedExpression);
+	if (objectLiteralEntries) {
+		const objectValue = {};
+		for (const objectEntry of objectLiteralEntries) {
+			objectValue[objectEntry.keyName] = evaluateExpression(
+				objectEntry.valueExpression,
+				scopeFrames,
+				settings,
+				node,
+				templateEngine,
+				runtimeState
+			);
+		}
+
+		return objectValue;
 	}
 
 	const topLevelFunctionCall = parseTopLevelFunctionCall(trimmedExpression);
@@ -399,8 +514,65 @@ function evaluateExpression(expression, scopeFrames, settings, node, templateEng
 		const helperArguments = [];
 		for (const argumentExpression of topLevelFunctionCall.argumentExpressions) {
 			helperArguments.push(
-				evaluateExpression(argumentExpression, scopeFrames, settings, node, templateEngine)
+				evaluateExpression(
+					argumentExpression,
+					scopeFrames,
+					settings,
+					node,
+					templateEngine,
+					runtimeState
+				)
 			);
+		}
+
+		if (topLevelFunctionCall.functionName === "fn") {
+			if (helperArguments.length === 0 || typeof helperArguments[0] !== "string") {
+				throw createRenderError(
+					settings.templateFilePath,
+					"fn(path, argsObject) requires the first argument to be a string path.",
+					"TEMPLATE_RENDER_FUNCTION_INVALID_ARGUMENTS",
+					node
+				);
+			}
+
+			const argumentObject = helperArguments.length > 1 ? helperArguments[1] : {};
+			const functionOutput = invokeFunctionTemplate(templateEngine, helperArguments[0], argumentObject, {
+				settings,
+				node,
+				functionPathStack: runtimeState.functionPathStack,
+				maxFunctionTemplateDepth:
+					templateEngine.options.maxFunctionTemplateDepth ?? settings.maxFunctionTemplateDepth ?? 25,
+				createFunctionRenderError: (message, code, cause = null) =>
+					createRenderError(settings.templateFilePath, message, code, node, cause),
+				renderFunctionTemplateSource: (
+					functionTemplateSource,
+					functionTemplateFilePath,
+					functionArgumentObject,
+					nextFunctionPathStack
+				) => {
+					const functionScopeFrames = [
+						{
+							localBindings: {},
+							contextValue: functionArgumentObject
+						}
+					];
+
+					return renderTemplateInternal(
+						templateEngine,
+						functionTemplateSource,
+						functionScopeFrames,
+						{
+							...settings,
+							templateFilePath: functionTemplateFilePath
+						},
+						{
+							...runtimeState,
+							functionPathStack: nextFunctionPathStack
+						}
+					);
+				}
+			});
+			return createRawTemplateOutputValue(functionOutput);
 		}
 
 		return invokeRegisteredHelper(
@@ -417,8 +589,22 @@ function evaluateExpression(expression, scopeFrames, settings, node, templateEng
 		if (operatorIndex > 0) {
 			const leftExpression = trimmedExpression.slice(0, operatorIndex);
 			const rightExpression = trimmedExpression.slice(operatorIndex + operator.length);
-			const leftValue = evaluateExpression(leftExpression, scopeFrames, settings, node, templateEngine);
-			const rightValue = evaluateExpression(rightExpression, scopeFrames, settings, node, templateEngine);
+			const leftValue = evaluateExpression(
+				leftExpression,
+				scopeFrames,
+				settings,
+				node,
+				templateEngine,
+				runtimeState
+			);
+			const rightValue = evaluateExpression(
+				rightExpression,
+				scopeFrames,
+				settings,
+				node,
+				templateEngine,
+				runtimeState
+			);
 
 			if (operator === "===") {
 				return leftValue === rightValue;
@@ -1040,6 +1226,45 @@ function parseTemplate(templateString, templateFilePath) {
 				continue;
 			}
 
+			if (directiveBody.startsWith("function ")) {
+				const functionExpression = directiveBody.slice(9).trim();
+				const withIndex = functionExpression.indexOf(" with ");
+				if (withIndex <= 0) {
+					throw createParseError(
+						templateString,
+						templateFilePath,
+						"Function directive must use 'function \"path\" with argsObject' syntax.",
+						"TEMPLATE_PARSE_INVALID_FUNCTION_DIRECTIVE",
+						openIndex,
+						directiveSnippet
+					);
+				}
+
+				const functionPathExpression = functionExpression.slice(0, withIndex).trim();
+				const argumentObjectExpression = functionExpression.slice(withIndex + 6).trim();
+				if (!functionPathExpression || !argumentObjectExpression) {
+					throw createParseError(
+						templateString,
+						templateFilePath,
+						"Function directive requires path and argument object expressions.",
+						"TEMPLATE_PARSE_INVALID_FUNCTION_DIRECTIVE",
+						openIndex,
+						directiveSnippet
+					);
+				}
+
+				getCurrentChildren().push({
+					type: "function",
+					functionPathExpression,
+					argumentObjectExpression,
+					line,
+					column,
+					snippet: directiveSnippet
+				});
+				cursor = closeIndex + 2;
+				continue;
+			}
+
 			if (directiveBody.startsWith("set ")) {
 				const setExpression = directiveBody.slice(4).trim();
 				const setMatch = setExpression.match(
@@ -1202,9 +1427,19 @@ function renderNodes(nodes, scopeFrames, settings, templateEngine, runtimeState)
 		}
 
 		if (node.type === "interpolation") {
-			let renderedValue = evaluateExpression(node.expression, scopeFrames, settings, node, templateEngine);
-			renderedValue = toOutputString(renderedValue);
-			if (!node.raw) {
+			const expressionValue = evaluateExpression(
+				node.expression,
+				scopeFrames,
+				settings,
+				node,
+				templateEngine,
+				runtimeState
+			);
+			const rawTemplateOutputValue = readRawTemplateOutputValue(expressionValue);
+			let renderedValue = toOutputString(expressionValue);
+			if (rawTemplateOutputValue !== null) {
+				renderedValue = rawTemplateOutputValue;
+			} else if (!node.raw) {
 				renderedValue = escapeHtml(renderedValue);
 			} else if (!settings.allowRawOutput) {
 				throw createRenderError(
@@ -1241,7 +1476,8 @@ function renderNodes(nodes, scopeFrames, settings, templateEngine, runtimeState)
 					scopeFrames,
 					settings,
 					node,
-					templateEngine
+					templateEngine,
+					runtimeState
 				);
 			}
 			continue;
@@ -1261,7 +1497,8 @@ function renderNodes(nodes, scopeFrames, settings, templateEngine, runtimeState)
 					scopeFrames,
 					settings,
 					node,
-					templateEngine
+					templateEngine,
+					runtimeState
 				);
 				if (conditionValue) {
 					matchedBranch = branch;
@@ -1281,7 +1518,8 @@ function renderNodes(nodes, scopeFrames, settings, templateEngine, runtimeState)
 				scopeFrames,
 				settings,
 				node,
-				templateEngine
+				templateEngine,
+				runtimeState
 			);
 			if (!Array.isArray(listValue)) {
 				if (settings.strictMissingKeyErrors) {
@@ -1319,13 +1557,86 @@ function renderNodes(nodes, scopeFrames, settings, templateEngine, runtimeState)
 			continue;
 		}
 
+		if (node.type === "function") {
+			const functionPathValue = evaluateExpression(
+				node.functionPathExpression,
+				scopeFrames,
+				settings,
+				node,
+				templateEngine,
+				runtimeState
+			);
+			if (typeof functionPathValue !== "string" || !functionPathValue.trim()) {
+				throw createRenderError(
+					settings.templateFilePath,
+					"Function directive path must resolve to a non-empty string.",
+					"TEMPLATE_RENDER_FUNCTION_INVALID_ARGUMENTS",
+					node
+				);
+			}
+
+			const argumentObject = evaluateExpression(
+				node.argumentObjectExpression,
+				scopeFrames,
+				settings,
+				node,
+				templateEngine,
+				runtimeState
+			);
+			const functionOutput = invokeFunctionTemplate(
+				templateEngine,
+				functionPathValue.trim(),
+				argumentObject,
+				{
+					settings,
+					node,
+					functionPathStack: runtimeState.functionPathStack,
+					maxFunctionTemplateDepth:
+						templateEngine.options.maxFunctionTemplateDepth ?? settings.maxFunctionTemplateDepth ?? 25,
+					createFunctionRenderError: (message, code, cause = null) =>
+						createRenderError(settings.templateFilePath, message, code, node, cause),
+					renderFunctionTemplateSource: (
+						functionTemplateSource,
+						functionTemplateFilePath,
+						functionArgumentObject,
+						nextFunctionPathStack
+					) => {
+						const functionScopeFrames = [
+							{
+								localBindings: {},
+								contextValue: functionArgumentObject
+							}
+						];
+
+						return renderTemplateInternal(
+							templateEngine,
+							functionTemplateSource,
+							functionScopeFrames,
+							{
+								...settings,
+								templateFilePath: functionTemplateFilePath
+							},
+							{
+								...runtimeState,
+								functionPathStack: nextFunctionPathStack
+							}
+						);
+					}
+				}
+			);
+
+			output += functionOutput;
+			continue;
+		}
+
 		if (node.type === "include") {
 			const includeTarget = evaluateExpression(
 				node.templatePathExpression,
 				scopeFrames,
 				settings,
 				node,
-				templateEngine
+				templateEngine,
+				runtimeState
 			);
 			const includeKey = toOutputString(includeTarget).trim();
 			if (!includeKey) {
@@ -1468,7 +1779,8 @@ function renderTemplateInternal(templateEngine, templateString, scopeFrames, set
 			scopeFrames,
 			settings,
 			{ line: 1, column: 1, snippet: `{% extends ${parsedTemplateRoot.extendsPathExpression} %}` },
-			templateEngine
+			templateEngine,
+			runtimeState
 		);
 		const resolvedLayoutPath = resolveTemplatePath(
 			templateEngine,
@@ -1539,6 +1851,7 @@ export function renderTemplate(templateEngine, templateString, contextData = {},
 
 	return renderTemplateInternal(templateEngine, templateString, scopeFrames, settings, {
 		templatePathStack: settings.templateFilePath ? [settings.templateFilePath] : [],
-		blockOverridesByName: new Map()
+		blockOverridesByName: new Map(),
+		functionPathStack: []
 	});
 }

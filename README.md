@@ -73,6 +73,9 @@ See full details in `./templating-engine-specification.md`.
 - loops: `{% for item in items %} ... {% end for %}`
 - includes: `{% include "../partials/site-header.partial.html" %}`
 - layout inheritance: `{% extends "../layouts/default.layout.html" %}` and `{% block main %}...{% endblock main %}`
+- function templates:
+	- interpolation call: `{{ fn("navigation-menu-item.function.html", { item: pageItem }) }}`
+	- directive call: `{% function "navigation-menu-item.function.html" with { item: pageItem } %}`
 
 ## Template File Naming Policy (v2)
 - layouts: `*.layout.html`
@@ -80,7 +83,7 @@ See full details in `./templating-engine-specification.md`.
 - partials: `*.partial.html`
 - functions/macros: `*.function.html`
 
-Function-template runtime for `*.function.html` files is scaffolded but not integrated into main template rendering yet.
+Function-template runtime for `*.function.html` files is implemented for both invocation forms: `{{ fn("name.function.html", { ... }) }}` and `{% function "name.function.html" with { ... } %}`.
 
 ## Documentation Map
 - Project overview: `./overview.md`

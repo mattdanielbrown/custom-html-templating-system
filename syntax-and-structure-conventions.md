@@ -110,6 +110,9 @@ This is the canonical conventions reference for template syntax and project stru
 - extending layouts:
 	- `{% extends "../layouts/default.layout.html" %}`
 	- `{% block main %}...{% endblock main %}`
+- function invocation:
+	- interpolation: `{{ fn("navigation-menu-item.function.html", { item: pageItem }) }}`
+	- directive: `{% function "navigation-menu-item.function.html" with { item: pageItem } %}`
 
 ## JavaScript and Formatting Conventions
 

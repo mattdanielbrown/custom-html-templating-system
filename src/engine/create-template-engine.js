@@ -3,10 +3,12 @@ export function createTemplateEngine(options = {}) {
 		options: {
 			templateRootDirectoryPath: options.templateRootDirectoryPath,
 			partialsDirectoryPath: options.partialsDirectoryPath,
+			functionsDirectoryPath: options.functionsDirectoryPath,
 			strictMissingKeyErrors: options.strictMissingKeyErrors ?? false,
 			allowRawOutput: options.allowRawOutput ?? true,
 			enableTemplateParseCache: options.enableTemplateParseCache ?? false,
-			enableTemplateFileCache: options.enableTemplateFileCache ?? false
+			enableTemplateFileCache: options.enableTemplateFileCache ?? false,
+			maxFunctionTemplateDepth: options.maxFunctionTemplateDepth ?? 25
 		},
 		partialsByName: new Map(),
 		helpersByName: new Map(),
