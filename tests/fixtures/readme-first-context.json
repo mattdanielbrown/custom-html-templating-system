@@ -1,0 +1,8 @@
+{
+	"title": "Home",
+	"user": {
+		"isSignedIn": true,
+		"name": "Matt"
+	},
+	"items": ["One", "Two", "Three"]
+}

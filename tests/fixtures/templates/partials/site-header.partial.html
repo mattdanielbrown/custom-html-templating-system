@@ -1,0 +1,11 @@
+<header>
+	<nav>
+		{% for pageItem in page.navigation %}
+			{% if pageItem.file === page.file %}
+				<a href="{{ pageItem.file }}" aria-current="page">{{ pageItem.title }}</a>
+			{% else %}
+				<a href="{{ pageItem.file }}">{{ pageItem.title }}</a>
+			{% end if %}
+		{% end for %}
+	</nav>
+</header>

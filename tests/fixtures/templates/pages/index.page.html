@@ -1,0 +1,11 @@
+{% extends "../layouts/default.layout.html" %}
+
+{% block main %}
+	<section>
+		{% set i = 0 %}
+		{% for card in page.cards %}
+			<article data-index="{{ i }}">{{ card }}</article>
+			{% set i++ %}
+		{% end for %}
+	</section>
+{% endblock main %}

@@ -1,0 +1,9 @@
+<h1>{{ title }}</h1>
+{{#if user.isSignedIn}}
+	<p>Welcome back, {{ user.name }}.</p>
+{{/if}}
+<ul>
+{{#each items as item}}
+	<li>{{ item }}</li>
+{{/each}}
+</ul>
