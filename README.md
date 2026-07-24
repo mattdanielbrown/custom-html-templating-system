@@ -1,18 +1,34 @@
 # html-template-engine
 
-[![status](https://img.shields.io/badge/status-v2.0.1-blue)](./roadmap.md)
+[![status](https://img.shields.io/badge/status-v2.2.0--development-orange)](./roadmap.md)
 
 A Node.js-first HTML templating engine with v2 directive syntax, layout inheritance, and deterministic rendering.
 
 ## Current Status
-- v2 parser and renderer are implemented for core syntax
-- docs and tests now target v2 conventions
-- roadmap TODO tests remain for later phases (helpers/caching hardening)
+- v2 parser and renderer are implemented for the documented syntax
+- helpers, caching, and function templates are implemented and test-covered
+- v2.2.0 adds an installable, dependency-free ESM package contract
 
 ## Quickstart (v2 Syntax)
 
 ### Install
-This repository is currently local-source driven. Package publishing metadata is not configured yet.
+Requires Node.js 22 or newer.
+
+Install the package when it is available from your configured npm registry:
+
+```sh
+npm install html-template-engine
+```
+
+For local development from a clean clone:
+
+```sh
+npm install
+npm test
+npm run verify-package
+```
+
+The package is ESM-only and exposes its public API from the package root.
 
 ### First Template (`*.page.html`)
 ```django

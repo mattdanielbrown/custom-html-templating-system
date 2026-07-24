@@ -1,0 +1,31 @@
+{
+	"name": "html-template-engine",
+	"version": "2.2.0",
+	"description": "A dependency-free Node.js HTML templating engine with deterministic rendering.",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/mattdanielbrown/custom-html-templating-system.git"
+	},
+	"homepage": "https://github.com/mattdanielbrown/custom-html-templating-system#readme",
+	"bugs": {
+		"url": "https://github.com/mattdanielbrown/custom-html-templating-system/issues"
+	},
+	"type": "module",
+	"main": "./src/engine/index.js",
+	"exports": "./src/engine/index.js",
+	"files": [
+		"src/engine/",
+		"README.md",
+		"CHANGELOG.md",
+		"roadmap.md",
+		"templating-engine-specification.md",
+		"syntax-and-structure-conventions.md"
+	],
+	"scripts": {
+		"test": "node --test",
+		"verify-package": "node scripts/verify-package.js"
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}

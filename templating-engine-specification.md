@@ -1,7 +1,9 @@
-# Templating Engine Specification (v2.0.1)
+# Templating Engine Specification (v2.2.0)
 
 ## 1. Scope and Runtime
-- Runtime target: Node.js
+- Runtime target: Node.js 22 or newer
+- Module format: ECMAScript modules (ESM)
+- Package entrypoint: `html-template-engine`
 - Template syntax target: v2 directive syntax (`{% ... %}`, `{# ... #}`, `{{ ... }}`)
 - Security model: escaped HTML output by default
 - Execution model: no arbitrary JavaScript execution from template source
@@ -14,6 +16,15 @@
 - `render-template-file(template-file-path, context-data, options?)`
 - `register-partial(name, template-string-or-path)`
 - `register-helper(name, helper-function)`
+
+The package root also exposes camel-case named exports for JavaScript consumers:
+- `createTemplateEngine`
+- `renderTemplate`
+- `renderTemplateFile`
+- `registerPartial`
+- `registerHelper`
+
+Internal source file subpaths are not part of the installed package API.
 
 ### 2.2 Options
 `create-template-engine(options)` supports:
