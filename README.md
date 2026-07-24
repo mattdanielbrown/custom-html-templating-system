@@ -28,6 +28,17 @@ npm test
 npm run verify-package
 ```
 
+To install the unpublished package into a separate local project:
+
+```sh
+mkdir -p /tmp/html-template-engine-package
+npm pack --pack-destination /tmp/html-template-engine-package
+cd /path/to/consumer-project
+npm install /tmp/html-template-engine-package/html-template-engine-2.2.0.tgz
+```
+
+The generated tarball exercises the same package boundary used by the clean-install integration test.
+
 The package is ESM-only and exposes its public API from the package root.
 
 ### First Template (`*.page.html`)

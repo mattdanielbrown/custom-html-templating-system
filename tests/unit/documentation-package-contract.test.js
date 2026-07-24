@@ -17,6 +17,8 @@ test("README documents the installable package contract", async () => {
 
 	assert.match(readmeSource, new RegExp(`npm install ${packageMetadata.name}`));
 	assert.match(readmeSource, new RegExp(`from "${packageMetadata.name}"`));
+	assert.match(readmeSource, /npm pack --pack-destination/);
+	assert.match(readmeSource, /npm install \/tmp\/html-template-engine-package\/html-template-engine-2\.2\.0\.tgz/);
 	assert.match(readmeSource, /npm test/);
 	assert.doesNotMatch(readmeSource, /Package publishing metadata is not configured yet/);
 

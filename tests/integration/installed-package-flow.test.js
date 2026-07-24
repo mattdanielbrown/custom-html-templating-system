@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
@@ -10,8 +10,9 @@ import { fileURLToPath } from "node:url";
 const executeFile = promisify(execFile);
 const repositoryRootDirectoryPath = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
-test("packed package installs cleanly and exposes only its root API", async () => {
+test("packed package installs cleanly and exposes only its root API", async (testContext) => {
 	const temporaryDirectoryPath = await mkdtemp(join(tmpdir(), "html-template-engine-package-"));
+	testContext.after(() => rm(temporaryDirectoryPath, { recursive: true, force: true }));
 	const packageDirectoryPath = join(temporaryDirectoryPath, "package");
 	const consumerDirectoryPath = join(temporaryDirectoryPath, "consumer");
 	const npmCacheDirectoryPath = join(temporaryDirectoryPath, "npm-cache");
@@ -32,15 +33,22 @@ test("packed package installs cleanly and exposes only its root API", async () =
 	);
 	const [packResult] = JSON.parse(packOutput);
 	const packedFilePaths = packResult.files.map((packedFile) => packedFile.path).sort();
+	const requiredRootFilePaths = [
+		"CHANGELOG.md",
+		"README.md",
+		"package.json",
+		"roadmap.md",
+		"syntax-and-structure-conventions.md",
+		"templating-engine-specification.md"
+	];
 
-	assert.ok(packedFilePaths.includes("package.json"));
 	assert.ok(packedFilePaths.includes("src/engine/index.js"));
-	assert.ok(packedFilePaths.includes("README.md"));
+	for (const requiredRootFilePath of requiredRootFilePaths) {
+		assert.ok(packedFilePaths.includes(requiredRootFilePath));
+	}
 	assert.ok(packedFilePaths.every((packedFilePath) =>
-		!packedFilePath.startsWith("tests/") &&
-		!packedFilePath.startsWith(".git/") &&
-		packedFilePath !== "baseline-summary.md" &&
-		packedFilePath !== "syntax-and-structure-conventions--updated-v2.md"
+		requiredRootFilePaths.includes(packedFilePath) ||
+		packedFilePath.startsWith("src/engine/")
 	));
 
 	const tarballFilePath = join(packageDirectoryPath, packResult.filename);
