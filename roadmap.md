@@ -1,9 +1,32 @@
 # Roadmap
 
 ## Summary
-This roadmap sequences implementation work from parser/render core to production hardening while preserving a stable, simple v1 scope.
+The v2 runtime phases are complete. Current work focuses on packaging and production-readiness while preserving the stable rendering contract.
+
+## v2.2.0: Installable Package Baseline
+
+### Deliverables
+- ESM package metadata with a root-only public export
+- dependency-free install and standard npm lifecycle commands
+- clean tarball install and consumer smoke tests
+- declared Node.js 22-or-newer runtime support
+- provenance-enabled npm release automation
+
+### Exit Criteria
+- `npm test` passes the full suite
+- `npm run verify-package` accepts only the intended package contents
+- a packed tarball installs and renders from a clean temporary project
+- a stable GitHub Release publishes only its matching package version after all checks pass
+- existing runtime API, syntax, errors, and cache behavior remain unchanged
+
+### Deferred
+- npm registry publication
+- CommonJS compatibility
+- configurable partial directory behavior
+- function-template-specific benchmarks and advanced macro features
 
 ## Phase 1: Parser and Renderer Core
+**Status: Complete**
 ### Entry Criteria
 - `templating-engine-specification.md` approved as v1 source of truth
 - syntax subset frozen for interpolation, if blocks, each blocks, and comments
@@ -19,6 +42,7 @@ This roadmap sequences implementation work from parser/render core to production
 - no arbitrary JavaScript execution path in parser or renderer
 
 ## Phase 2: File Loading and Partials
+**Status: Complete**
 ### Entry Criteria
 - phase 1 parser/renderer test suite stable
 
@@ -33,6 +57,7 @@ This roadmap sequences implementation work from parser/render core to production
 - directory traversal attempts are blocked
 
 ## Phase 3: Helpers and Diagnostics
+**Status: Complete**
 ### Entry Criteria
 - partial resolution and base rendering behavior stable
 
@@ -47,6 +72,7 @@ This roadmap sequences implementation work from parser/render core to production
 - diagnostics identify line/column reliably for parse failures
 
 ## Phase 4: Performance and Caching
+**Status: Runtime and cache coverage complete; reproducible benchmark deferred**
 ### Entry Criteria
 - feature set for v1 is functionally complete
 
@@ -61,6 +87,7 @@ This roadmap sequences implementation work from parser/render core to production
 - no behavior regression between cached and uncached rendering
 
 ## Phase 5: Docs Hardening and Examples
+**Status: In progress**
 ### Entry Criteria
 - core implementation and tests are stable
 

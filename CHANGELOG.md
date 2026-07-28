@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented in this file.
 
+## v2.2.0 - Unreleased
+
+This release establishes an installable, dependency-free Node.js package contract.
+
+### Added
+
+- Added ESM package metadata for the `@mattdanielbrown/html-template-engine` package.
+- Added standard `npm test` and `npm run verify-package` commands.
+- Added clean tarball installation coverage for root imports, inline rendering, and file rendering.
+- Declared support for Node.js 22 and newer.
+- Added a provenance-enabled npm release workflow with tag, package, and prerelease safeguards.
+- Added public-registry publishing constraints and automatic prepublish verification.
+
+### Compatibility notes
+
+- The documented default and named exports remain unchanged.
+- Package consumers import from `@mattdanielbrown/html-template-engine`; internal source subpaths are not exported.
+- CommonJS `require()` remains outside the supported public contract.
+
 ## v2.1.0 - 2026-03-23
 
 This release finalizes the v2 syntax baseline, ships function-template execution, and completes README-first onboarding coverage.

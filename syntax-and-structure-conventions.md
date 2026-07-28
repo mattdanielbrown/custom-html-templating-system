@@ -1,4 +1,4 @@
-# Syntax and Structure Conventions (Canonical v2.0.1)
+# Syntax and Structure Conventions (Canonical v2.2.0)
 
 This is the canonical conventions reference for template syntax and project structure.
 

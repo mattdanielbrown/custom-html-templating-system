@@ -1,18 +1,45 @@
 # html-template-engine
 
-[![status](https://img.shields.io/badge/status-v2.0.1-blue)](./roadmap.md)
+[![status](https://img.shields.io/badge/status-v2.2.0--development-orange)](./roadmap.md)
 
 A Node.js-first HTML templating engine with v2 directive syntax, layout inheritance, and deterministic rendering.
 
 ## Current Status
-- v2 parser and renderer are implemented for core syntax
-- docs and tests now target v2 conventions
-- roadmap TODO tests remain for later phases (helpers/caching hardening)
+- v2 parser and renderer are implemented for the documented syntax
+- helpers, caching, and function templates are implemented and test-covered
+- v2.2.0 adds an installable, dependency-free ESM package contract
 
 ## Quickstart (v2 Syntax)
 
 ### Install
-This repository is currently local-source driven. Package publishing metadata is not configured yet.
+Requires Node.js 22 or newer.
+
+Install the package when it is available from your configured npm registry:
+
+```sh
+npm install @mattdanielbrown/html-template-engine
+```
+
+For local development from a clean clone:
+
+```sh
+npm install
+npm test
+npm run verify-package
+```
+
+To install the unpublished package into a separate local project:
+
+```sh
+mkdir -p /tmp/html-template-engine-package
+npm pack --pack-destination /tmp/html-template-engine-package
+cd /path/to/consumer-project
+npm install /tmp/html-template-engine-package/mattdanielbrown-html-template-engine-2.2.0.tgz
+```
+
+The generated tarball exercises the same package boundary used by the clean-install integration test.
+
+The package is ESM-only and exposes its public API from the package root.
 
 ### First Template (`*.page.html`)
 ```django
@@ -35,7 +62,7 @@ This repository is currently local-source driven. Package publishing metadata is
 
 ### First Render
 ```js
-import templateEngineApi from "html-template-engine";
+import templateEngineApi from "@mattdanielbrown/html-template-engine";
 
 const templateEngine = templateEngineApi["create-template-engine"]({
 	templateRootDirectoryPath: "./src/templates"
