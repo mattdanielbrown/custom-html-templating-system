@@ -17,7 +17,7 @@ Requires Node.js 22 or newer.
 Install the package when it is available from your configured npm registry:
 
 ```sh
-npm install html-template-engine
+npm install @mattdanielbrown/html-template-engine
 ```
 
 For local development from a clean clone:
@@ -34,7 +34,7 @@ To install the unpublished package into a separate local project:
 mkdir -p /tmp/html-template-engine-package
 npm pack --pack-destination /tmp/html-template-engine-package
 cd /path/to/consumer-project
-npm install /tmp/html-template-engine-package/html-template-engine-2.2.0.tgz
+npm install /tmp/html-template-engine-package/mattdanielbrown-html-template-engine-2.2.0.tgz
 ```
 
 The generated tarball exercises the same package boundary used by the clean-install integration test.
@@ -62,7 +62,7 @@ The package is ESM-only and exposes its public API from the package root.
 
 ### First Render
 ```js
-import templateEngineApi from "html-template-engine";
+import templateEngineApi from "@mattdanielbrown/html-template-engine";
 
 const templateEngine = templateEngineApi["create-template-engine"]({
 	templateRootDirectoryPath: "./src/templates"

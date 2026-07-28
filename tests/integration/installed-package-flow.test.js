@@ -9,6 +9,9 @@ import { fileURLToPath } from "node:url";
 
 const executeFile = promisify(execFile);
 const repositoryRootDirectoryPath = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const packageMetadata = JSON.parse(
+	await readFile(new URL("../../package.json", import.meta.url), "utf8")
+);
 
 test("packed package installs cleanly and exposes only its root API", async (testContext) => {
 	const temporaryDirectoryPath = await mkdtemp(join(tmpdir(), "html-template-engine-package-"));
@@ -28,10 +31,19 @@ test("packed package installs cleanly and exposes only its root API", async (tes
 		["pack", "--json", "--pack-destination", packageDirectoryPath],
 		{
 			cwd: repositoryRootDirectoryPath,
-			env: { ...process.env, npm_config_cache: npmCacheDirectoryPath }
+			env: {
+				...process.env,
+				npm_config_cache: npmCacheDirectoryPath,
+				npm_config_dry_run: "false"
+			}
 		}
 	);
-	const [packResult] = JSON.parse(packOutput);
+	const parsedPackResult = JSON.parse(packOutput);
+	const packResult = Array.isArray(parsedPackResult)
+		? parsedPackResult[0]
+		: parsedPackResult.files
+			? parsedPackResult
+			: Object.values(parsedPackResult)[0];
 	const packedFilePaths = packResult.files.map((packedFile) => packedFile.path).sort();
 	const requiredRootFilePaths = [
 		"CHANGELOG.md",
@@ -74,7 +86,11 @@ test("packed package installs cleanly and exposes only its root API", async (tes
 		["install", "--ignore-scripts", "--no-audit", "--no-fund", tarballFilePath],
 		{
 			cwd: consumerDirectoryPath,
-			env: { ...process.env, npm_config_cache: npmCacheDirectoryPath }
+			env: {
+				...process.env,
+				npm_config_cache: npmCacheDirectoryPath,
+				npm_config_dry_run: "false"
+			}
 		}
 	);
 
@@ -83,7 +99,7 @@ test("packed package installs cleanly and exposes only its root API", async (tes
 			createTemplateEngine,
 			renderTemplate,
 			renderTemplateFile
-		} from "html-template-engine";
+		} from "${packageMetadata.name}";
 
 		const inlineEngine = createTemplateEngine({ templateRootDirectoryPath: "./templates" });
 		const inlineOutput = renderTemplate(inlineEngine, "<p>{{ value }}</p>", {
@@ -105,7 +121,7 @@ test("packed package installs cleanly and exposes only its root API", async (tes
 		}
 
 		try {
-			await import("html-template-engine/src/engine/render-template.js");
+			await import("${packageMetadata.name}/src/engine/render-template.js");
 			throw new Error("Internal package subpath unexpectedly resolved.");
 		} catch (error) {
 			if (error.code !== "ERR_PACKAGE_PATH_NOT_EXPORTED") {
@@ -118,7 +134,7 @@ test("packed package installs cleanly and exposes only its root API", async (tes
 
 	const installedPackageMetadata = JSON.parse(
 		await readFile(
-			join(consumerDirectoryPath, "node_modules", "html-template-engine", "package.json"),
+			join(consumerDirectoryPath, "node_modules", ...packageMetadata.name.split("/"), "package.json"),
 			"utf8"
 		)
 	);

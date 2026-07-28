@@ -15,7 +15,7 @@ const packageMetadata = JSON.parse(
 );
 
 test("package metadata defines the v2.2.0 ESM root contract", () => {
-	assert.equal(packageMetadata.name, "html-template-engine");
+	assert.equal(packageMetadata.name, "@mattdanielbrown/html-template-engine");
 	assert.equal(packageMetadata.version, "2.2.0");
 	assert.equal(packageMetadata.type, "module");
 	assert.equal(packageMetadata.main, "./src/engine/index.js");
@@ -26,7 +26,9 @@ test("package metadata defines the v2.2.0 ESM root contract", () => {
 		"git+https://github.com/mattdanielbrown/custom-html-templating-system.git"
 	);
 	assert.equal(packageMetadata.scripts.test, "node --test");
+	assert.equal(packageMetadata.scripts.prepublishOnly, "npm test && npm run verify-package");
 	assert.equal(packageMetadata.scripts["verify-package"], "node scripts/verify-package.js");
+	assert.equal(packageMetadata.scripts["verify-release"], "node scripts/verify-release.js");
 	assert.deepEqual(packageMetadata.dependencies ?? {}, {});
 	assert.deepEqual(packageMetadata.devDependencies ?? {}, {});
 });

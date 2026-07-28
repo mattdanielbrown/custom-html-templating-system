@@ -1,5 +1,5 @@
 {
-	"name": "html-template-engine",
+	"name": "@mattdanielbrown/html-template-engine",
 	"version": "2.2.0",
 	"description": "A dependency-free Node.js HTML templating engine with deterministic rendering.",
 	"repository": {
@@ -22,10 +22,17 @@
 		"syntax-and-structure-conventions.md"
 	],
 	"scripts": {
+		"prepublishOnly": "npm test && npm run verify-package",
 		"test": "node --test",
-		"verify-package": "node scripts/verify-package.js"
+		"verify-package": "node scripts/verify-package.js",
+		"verify-release": "node scripts/verify-release.js"
 	},
 	"engines": {
 		"node": ">=22"
+	},
+	"publishConfig": {
+		"access": "public",
+		"provenance": true,
+		"registry": "https://registry.npmjs.org/"
 	}
 }

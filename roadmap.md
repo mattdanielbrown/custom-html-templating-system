@@ -10,15 +10,17 @@ The v2 runtime phases are complete. Current work focuses on packaging and produc
 - dependency-free install and standard npm lifecycle commands
 - clean tarball install and consumer smoke tests
 - declared Node.js 22-or-newer runtime support
+- provenance-enabled npm release automation
 
 ### Exit Criteria
 - `npm test` passes the full suite
 - `npm run verify-package` accepts only the intended package contents
 - a packed tarball installs and renders from a clean temporary project
+- a stable GitHub Release publishes only its matching package version after all checks pass
 - existing runtime API, syntax, errors, and cache behavior remain unchanged
 
 ### Deferred
-- npm registry publication and release automation
+- npm registry publication
 - CommonJS compatibility
 - configurable partial directory behavior
 - function-template-specific benchmarks and advanced macro features

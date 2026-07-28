@@ -27,7 +27,12 @@ try {
 			env: { ...process.env, npm_config_cache: join(temporaryDirectoryPath, "npm-cache") }
 		}
 	);
-	const [packResult] = JSON.parse(stdout);
+	const parsedPackResult = JSON.parse(stdout);
+	const packResult = Array.isArray(parsedPackResult)
+		? parsedPackResult[0]
+		: parsedPackResult.files
+			? parsedPackResult
+			: Object.values(parsedPackResult)[0];
 	const packedFilePaths = packResult.files.map((packedFile) => packedFile.path);
 
 	assert.ok(packedFilePaths.includes("src/engine/index.js"), "Package entrypoint is missing from the tarball.");

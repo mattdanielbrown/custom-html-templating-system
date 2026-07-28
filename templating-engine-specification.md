@@ -3,7 +3,7 @@
 ## 1. Scope and Runtime
 - Runtime target: Node.js 22 or newer
 - Module format: ECMAScript modules (ESM)
-- Package entrypoint: `html-template-engine`
+- Package entrypoint: `@mattdanielbrown/html-template-engine`
 - Template syntax target: v2 directive syntax (`{% ... %}`, `{# ... #}`, `{{ ... }}`)
 - Security model: escaped HTML output by default
 - Execution model: no arbitrary JavaScript execution from template source
